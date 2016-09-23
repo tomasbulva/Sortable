@@ -90,7 +90,10 @@
 								models: source,
 								oldIndex: evt.oldIndex,
 								newIndex: evt.newIndex,
-								originalEvent: evt
+								originalEvent: evt,
+                from: evt.from,
+ 							  to: evt.to,
+ 							  item: evt.item
 							});
 						}
 

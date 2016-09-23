@@ -243,7 +243,12 @@
 			forceFallback: false,
 			fallbackClass: 'sortable-fallback',
 			fallbackOnBody: false,
-			fallbackTolerance: 0
+			fallbackTolerance: 0,
+      dropSort: true,
+			dropAdd: true,
+			dropRemove: true,
+			dropUpdate: true,
+			dropRevert: false
 		};
 
 
@@ -284,7 +289,10 @@
 		constructor: Sortable,
 
 		_onTapStart: function (/** Event|TouchEvent */evt) {
-			var _this = this,
+
+      evt.stopPropagation();
+
+      var _this = this,
 				el = this.el,
 				options = this.options,
 				type = evt.type,
@@ -831,15 +839,26 @@
 
 						if (newIndex >= 0) {
 
-							// Add event
-							_dispatchEvent(null, parentEl, 'add', dragEl, rootEl, oldIndex, newIndex);
+              if (options.dropSort) {
+ 								// drag from one list and drop into another
+ 								_dispatchEvent(null, parentEl, 'sort', dragEl, rootEl, oldIndex, newIndex);
+ 								_dispatchEvent(this, rootEl, 'sort', dragEl, rootEl, oldIndex, newIndex);
+ 							}
 
-							// Remove event
-							_dispatchEvent(this, rootEl, 'remove', dragEl, rootEl, oldIndex, newIndex);
+							if (options.dropAdd) {
+								// Add event
+								_dispatchEvent(null, parentEl, 'add', dragEl, rootEl, oldIndex, newIndex);
+							}
 
-							// drag from one list and drop into another
-							_dispatchEvent(null, parentEl, 'sort', dragEl, rootEl, oldIndex, newIndex);
-							_dispatchEvent(this, rootEl, 'sort', dragEl, rootEl, oldIndex, newIndex);
+              if (options.dropRemove) {
+ 								// Remove event
+ 								_dispatchEvent(this, rootEl, 'remove', dragEl, rootEl, oldIndex, newIndex);
+ 							}
+
+ 							if (options.dropRevert) {
+ 								_dispatchEvent(this, parentEl, 'end', dragEl, rootEl, oldIndex, newIndex);
+ 							}
+
 						}
 					}
 					else {
@@ -851,19 +870,26 @@
 							newIndex = _index(dragEl, options.draggable);
 
 							if (newIndex >= 0) {
-								// drag & drop within the same list
-								_dispatchEvent(this, rootEl, 'update', dragEl, rootEl, oldIndex, newIndex);
-								_dispatchEvent(this, rootEl, 'sort', dragEl, rootEl, oldIndex, newIndex);
+                if (options.dropUpdate) {
+ 									_dispatchEvent(this, rootEl, 'update', dragEl, rootEl, oldIndex, newIndex);
+ 								}
+ 								if (options.dropSort) {
+ 									_dispatchEvent(this, rootEl, 'sort', dragEl, rootEl, oldIndex, newIndex);
+ 								}
 							}
+              if (options.dropRevert) {
+								_dispatchEvent(this, parentEl, 'end', dragEl, rootEl, oldIndex, newIndex);
+							}
+
 						}
 					}
 
-					if (Sortable.active) {
+					if (Sortable.active && !options.dropRevert) {
 						if (newIndex === null || newIndex === -1) {
 							newIndex = oldIndex;
 						}
 
-						_dispatchEvent(this, rootEl, 'end', dragEl, rootEl, oldIndex, newIndex);
+						_dispatchEvent(this, parentEl, 'end', dragEl, rootEl, oldIndex, newIndex);
 
 						// Save sorting
 						this.save();
@@ -1241,7 +1267,10 @@
 		}
 
 		while (el && (el = el.previousElementSibling)) {
-			if ((el.nodeName.toUpperCase() !== 'TEMPLATE') && (selector === '>*' || _matches(el, selector))) {
+      if (
+ 				el.nodeName.toUpperCase() !== 'TEMPLATE'
+ 				&& _matches(el, selector)
+ 			) {
 				index++;
 			}
 		}
